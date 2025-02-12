@@ -1,4 +1,4 @@
-param location string
+/* param location string
 
 resource OnPremVM 'Microsoft.Compute/virtualMachines@2023-09-01' existing = {
   name: 'OnPremVM'
@@ -14,3 +14,4 @@ resource createDNSConditionalForwarder 'Microsoft.Compute/virtualMachines/runCom
     }
   }
 }
+ */
