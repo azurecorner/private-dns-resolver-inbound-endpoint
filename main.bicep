@@ -23,6 +23,7 @@ module spokevnet './spokevnet.bicep' = {
   name: 'spokevnet'
   params: {
     location: location
+    Stage: Stage
   }
 }
 
@@ -37,37 +38,25 @@ module VMs './VMs.bicep' = {
     //onpremsubnetID: onpremvnet.outputs.onpremsubnetID
     spokesubnetID: spokevnet.outputs.spokesubnetID
   }
-  dependsOn: [
-    spokevnet
-    //onpremvnet
-  ]
 }
 
-/* module vnetpeering './vnetPeering.bicep' = {
+ module vnetpeering './vnetPeering.bicep' = {
   name: 'vnetpeering'
   params: {
     HubID: hubvnet.outputs.vnetID
-    Spoke1ID: spokevnet.outputs.vnetID
-    Spoke2ID: onpremvnet.outputs.vnetID
+    SpokeID: spokevnet.outputs.vnetID
+   
   }
-  dependsOn: [
-    hubvnet
-    spokevnet
-    onpremvnet
-  ]
-} */
+}  
 
-/* module bastion 'bastion.bicep' = {
+module bastion 'bastion.bicep' = {
   name: 'bastion'
   params: {
     HubSubnetID: hubvnet.outputs.bastionSubnetID
     location: location
   }
-  dependsOn: [
-    hubvnet
-  ]
 }
- */
+
 module storage 'storage.bicep' = {
   name: 'storage'
   params: {
@@ -77,12 +66,9 @@ module storage 'storage.bicep' = {
     spokeSubnetID: spokevnet.outputs.spokesubnetID
     storageAccountName: storageAccountName
   }
-  dependsOn: [
-    spokevnet
-  ]
 }
 
-module privateresolver 'privateresolver.bicep' = {
+module privateresolver 'privateresolver.bicep' = if (Stage == 'EndStage') {
   name: 'privateresolver'
   params: {
     location: location
@@ -90,18 +76,6 @@ module privateresolver 'privateresolver.bicep' = {
     inboundSubnetID: hubvnet.outputs.inboundSubnetID
     outboundSubnetID: hubvnet.outputs.outboundSubnetID
   }
-  dependsOn: [
-    hubvnet
-  ]
 }
 
-/* module addConditionalForwarder 'addConditionalForwarder.bicep' = if (Stage == 'EndStage') {
-  name: 'addConditionalForwarder'
-  params: {
-    location: location
-  }
-  dependsOn: [
-    VMs
-  ]
-}
- */
+

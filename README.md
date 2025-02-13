@@ -107,3 +107,24 @@ From time to time the Bicep deployments will fail for various reasons. I find th
 add a rule with domain mane of   logcorner.local.  and destination ip addrees is the private of the on premise dns server  (ex : 10.100.0.5) , port is 53
 7. link the ruleset to the hub vnet
 8. spokevnet should use the dnsserver : custom with ip address of private dns resolver inbound ip ( 10.200.0.70)
+
+
+
+# ###################################################
+nslookup logcornerstprivdnsrev.file.core.windows.net
+Server:  UnKnown
+Address:  168.63.129.16
+
+Non-authoritative answer:
+Name:    logcornerstprivdnsrev.privatelink.file.core.windows.net
+Address:  10.201.0.5
+Aliases:  logcornerstprivdnsrev.file.core.windows.net
+
+
+Server:  UnKnown
+Address:  10.200.0.70
+
+Non-authoritative answer:
+Name:    logcornerstprivdnsrev.privatelink.file.core.windows.net
+Address:  10.201.0.5
+Aliases:  logcornerstprivdnsrev.file.core.windows.net

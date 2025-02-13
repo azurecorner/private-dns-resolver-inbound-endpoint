@@ -30,7 +30,7 @@ resource inboundEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-0
   }
 }
 
-resource outboundEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-01' = {
+/* resource outboundEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022-07-01' = {
   name: 'outboundEndpoint'
   location: location
   parent: privateResolver
@@ -40,8 +40,8 @@ resource outboundEndpoint 'Microsoft.Network/dnsResolvers/outboundEndpoints@2022
     }
   }
 }
-
-resource labzoneRuleset 'Microsoft.Network/dnsForwardingRulesets@2022-07-01' = {
+ */
+/* resource labzoneRuleset 'Microsoft.Network/dnsForwardingRulesets@2022-07-01' = {
   name: 'labzoneRuleset'
   location: location
   properties: {
@@ -75,29 +75,4 @@ resource rulesetVnetLink 'Microsoft.Network/dnsForwardingRulesets/virtualNetwork
       id: hubvnetID
     }
   }
-}
-
-resource spokevnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
-  name: 'Spoke'
-  location: location
-  properties: {
-    addressSpace: {
-      addressPrefixes: [
-        '10.201.0.0/24'
-      ]
-    }
-    subnets: [
-      {
-        name: 'default'
-        properties: {
-          addressPrefix: '10.201.0.0/26'
-        }
-      }
-    ]
-    dhcpOptions: {
-      dnsServers: [
-        '10.200.0.70'
-      ]
-    }
-  }
-}
+} */
