@@ -2,8 +2,6 @@
  @description('Select either FirstStage or EndStage, based on whether or not you want the complete setup with Private Resolver or not. See readme for more information.')
 param Stage string
 
-
-
 resource spokevnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
   name: 'Spoke'
   location: location

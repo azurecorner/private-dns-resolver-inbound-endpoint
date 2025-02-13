@@ -4,8 +4,6 @@ param localAdminUsername string
 param localAdminPassword string
 param spokesubnetID string
 
-
-
 resource SpokeVMNic 'Microsoft.Network/networkInterfaces@2023-09-01' = {
   name: 'SpokeVMNic'
   location: location
@@ -23,12 +21,6 @@ resource SpokeVMNic 'Microsoft.Network/networkInterfaces@2023-09-01' = {
     ]
   }
 }
-
-
-
-
-
-
 
 resource SpokeVM 'Microsoft.Compute/virtualMachines@2023-09-01' = {
   name: 'SpokeVM'
@@ -72,17 +64,3 @@ resource SpokeVM 'Microsoft.Compute/virtualMachines@2023-09-01' = {
 }
 
 
-
-resource autoShutdownSpoke 'Microsoft.DevTestLab/schedules@2018-09-15' = {
-  name: 'shutdown-computevm-SpokeVM'
-  location: location
-  properties: {
-    status: 'Enabled'
-    dailyRecurrence: {
-      time: '17:00'
-    }
-    timeZoneId: 'UTC'
-    targetResourceId: SpokeVM.id
-    taskType: 'ComputeVmShutdownTask'
-  }
-}

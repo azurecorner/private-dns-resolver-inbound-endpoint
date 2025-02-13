@@ -35,7 +35,6 @@ module VMs './VMs.bicep' = {
     location: location
     localAdminUsername: localAdminUsername
     localAdminPassword: localAdminPassword
-    //onpremsubnetID: onpremvnet.outputs.onpremsubnetID
     spokesubnetID: spokevnet.outputs.spokesubnetID
   }
 }
@@ -74,7 +73,7 @@ module privateresolver 'privateresolver.bicep' = if (Stage == 'EndStage') {
     location: location
     hubvnetID: hubvnet.outputs.vnetID
     inboundSubnetID: hubvnet.outputs.inboundSubnetID
-    outboundSubnetID: hubvnet.outputs.outboundSubnetID
+   
   }
 }
 
