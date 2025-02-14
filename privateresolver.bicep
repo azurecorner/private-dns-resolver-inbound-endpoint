@@ -1,6 +1,7 @@
 param location string
 param hubvnetID string
 param inboundSubnetID string
+param outboundPrivateIpAddress string ='10.200.0.70'
 resource privateResolver 'Microsoft.Network/dnsResolvers@2022-07-01' = {
   name: 'privateResolver'
   location: location
@@ -18,7 +19,7 @@ resource inboundEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-0
   properties: {
     ipConfigurations: [
       {
-        privateIpAddress: '10.200.0.70'
+        privateIpAddress: outboundPrivateIpAddress
         privateIpAllocationMethod: 'Static'
         subnet: {
           id: inboundSubnetID

@@ -1,4 +1,8 @@
 param location string
+param vnetAddressPrefixes string ='10.200.0.0/24'
+param bastionSubnetAddressPrefixes string ='10.200.0.0/26'
+param inboundSubnetAddressPrefixes string ='10.200.0.64/26'
+param outboundSubnetAddressPrefixes string ='10.200.0.128/26'
 
 resource hubvnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
   name: 'Hub'
@@ -6,20 +10,20 @@ resource hubvnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
   properties: {
     addressSpace: {
       addressPrefixes: [
-        '10.200.0.0/24'
+        vnetAddressPrefixes
       ]
     }
     subnets: [
       {
         name: 'AzureBastionSubnet'
         properties: {
-          addressPrefix: '10.200.0.0/26'
+          addressPrefix: bastionSubnetAddressPrefixes
         }
       }
       {
         name: 'Inbound'
         properties: {
-          addressPrefix: '10.200.0.64/26'
+          addressPrefix: inboundSubnetAddressPrefixes
           delegations: [
             {
               name: 'Microsoft.Network.dnsResolvers'
@@ -33,7 +37,7 @@ resource hubvnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
       {
         name: 'Outbound'
         properties: {
-          addressPrefix: '10.200.0.128/26'
+          addressPrefix: outboundSubnetAddressPrefixes
           delegations: [
             {
               name: 'Microsoft.Network.dnsResolvers'
