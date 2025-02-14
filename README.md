@@ -21,6 +21,11 @@ In this tutorial, I will configure only the inbound endpoint. The outbound endpo
 
 ## 2. Infrastructure
 
+To configure the infrastructure, deploy the DNS Private Resolver within a virtual network.
+Set up the Private DNS Resolver inbound endpoint using a private IP address from the virtual network.
+Delegate the inbound and outbound subnets to Microsoft.Network/dnsResolvers.
+In the spoke virtual network, configure the custom DNS server to use the private IP address of the DNS resolver inbound endpoint (e.g., 10.200.0.70).
+
 To setup  DNS Private Resolver inbound endpoint, you need the following infrastructure:
 
 - **A Hub virtual network with two subnets:**
@@ -46,6 +51,53 @@ To setup  DNS Private Resolver inbound endpoint, you need the following infrastr
 /*------------------------------------------ Hub Virtual Network ------------------------------------------*/
 
 ```bicep
+resource hubvnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
+  name: 'Hub'
+  location: location
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        vnetAddressPrefixes
+      ]
+    }
+    subnets: [
+      {
+        name: 'AzureBastionSubnet'
+        properties: {
+          addressPrefix: bastionSubnetAddressPrefixes
+        }
+      }
+      {
+        name: 'Inbound'
+        properties: {
+          addressPrefix: inboundSubnetAddressPrefixes
+          delegations: [
+            {
+              name: 'Microsoft.Network.dnsResolvers'
+              properties: {
+                serviceName: 'Microsoft.Network/dnsResolvers'
+              }
+            }
+          ]
+        }
+      }
+      {
+        name: 'Outbound'
+        properties: {
+          addressPrefix: outboundSubnetAddressPrefixes
+          delegations: [
+            {
+              name: 'Microsoft.Network.dnsResolvers'
+              properties: {
+                serviceName: 'Microsoft.Network/dnsResolvers'
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
 
 ```
 
@@ -54,6 +106,30 @@ To setup  DNS Private Resolver inbound endpoint, you need the following infrastr
 /*------------------------------------------ Spoke Virtual Network ------------------------------------------*/
 
 ```bicep
+resource spokevnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
+  name: 'Spoke'
+  location: location
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        '10.201.0.0/24'
+      ]
+    }
+    subnets: [
+      {
+        name: 'default'
+        properties: {
+          addressPrefix: '10.201.0.0/26'
+        }
+      }
+    ]
+    dhcpOptions: Stage == 'EndStage' ? {
+      dnsServers: [
+        '10.200.0.70'
+      ]
+    } : null
+  }
+}
 
 ```
 
@@ -62,7 +138,31 @@ To setup  DNS Private Resolver inbound endpoint, you need the following infrastr
 /*------------------------------------------ Storage Account -----------------------------------------------*/
 
 ```bicep
+resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
+  name: storageAccountName
+  location: location
+  sku: {
+    name: 'Standard_LRS'
+  }
+  kind: 'StorageV2'
+  properties: {
+    publicNetworkAccess: 'Disabled'
+    accessTier: 'Cool'
+  }
+}
 
+resource fileService 'Microsoft.Storage/storageAccounts/fileServices@2023-01-01' = {
+  name: 'default'
+  parent: storageAccount
+}
+
+resource share 'Microsoft.Storage/storageAccounts/fileServices/shares@2023-01-01' = {
+  name: 'share'
+  parent: fileService
+  properties: {
+    accessTier: 'Cool'
+  }
+}
 ```
 
 ### 2.4 Storage Account  Private Endpoint
@@ -70,6 +170,43 @@ To setup  DNS Private Resolver inbound endpoint, you need the following infrastr
 /*---------------------------------------  Storage Account  Private Endpoint ----------------------------------*/
 
 ```bicep
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2023-09-01' = {
+  name: 'private'
+  location: location
+  properties: {
+    subnet: {
+      id: spokeSubnetID
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'private'
+        properties: {
+          privateLinkServiceId: storageAccount.id
+          groupIds: [
+            'file'
+          ]
+        }
+      } 
+    ]
+  }
+}
+
+resource privateDNSZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.file.${environment().suffixes.storage}'
+  location: 'global'
+}
+
+resource privateDNSZoneLinkToHub 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  name: 'privatelink.file.${environment().suffixes.storage}-linkToHub'
+  parent: privateDNSZone
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: hubVnetID
+    }
+  }
+}
 
 ```
 
@@ -78,46 +215,58 @@ To setup  DNS Private Resolver inbound endpoint, you need the following infrastr
 /*------------------------------------------ Private Resolver -------------------------------------------------*/
 
 ```bicep
+resource privateResolver 'Microsoft.Network/dnsResolvers@2022-07-01' = {
+  name: 'privateResolver'
+  location: location
+  properties: {
+    virtualNetwork: {
+      id: hubvnetID
+    }
+  }
+}
+
+resource inboundEndpoint 'Microsoft.Network/dnsResolvers/inboundEndpoints@2022-07-01' = {
+  name: 'inboundEndpoint'
+  location: location
+  parent: privateResolver
+  properties: {
+    ipConfigurations: [
+      {
+        privateIpAddress: outboundPrivateIpAddress
+        privateIpAllocationMethod: 'Static'
+        subnet: {
+          id: inboundSubnetID
+        }
+      }
+    ]
+  }
+}
 
 ```
 
-# ########################################################################################################
+### Deployment Commands  
 
-## notes
-
-0. deploy the dns private resolver inside a vnet
-1. Private dns resolver inbound enpoint : use a private ip adress from the vnet
-2. Configure onpremise dns with a conditional forwarder  , with dns domain file.core.windows.net and the private ip of the dns resolver inbound endpoint
-
-3. the inbound and outbound subnet should be delegated to  Microsoft.Network/dnsResolvers
-
-4. inbound endpoint should resolve private endpoint
-
-5. for outbound endpoint use the outbound subnet
-
-6. create a dns rulesut and use the outbound of the dns private resolver
-add a rule with domain mane of   logcorner.local.  and destination ip addrees is the private of the on premise dns server  (ex : 10.100.0.5) , port is 53
-7. link the ruleset to the hub vnet
-8. spokevnet should use the dnsserver : custom with ip address of private dns resolver inbound ip ( 10.200.0.70)
-
-# #############################
+**Test deployement using Default Azure DNS**
 
 ```powershell
 Connect-AzAccount -Tenant 'xxxx-xxxx-xxxx-xxxx' -SubscriptionId 'yyyy-yyyy-yyyy-yyyy'
 
-Account                SubscriptionName TenantId                Environment
--------                ---------------- --------                -----------
-azureuser@contoso.com  Subscription1    xxxx-xxxx-xxxx-xxxx     AzureCloud
 $subscriptionId= (Get-AzContext).Subscription.id
 az account set --subscription $subscriptionId
 $resourceGroupName="rg-dns-private-resolver"
 New-AzResourceGroup -Name $resourceGroupName -Location "westeurope"
-New-AzResourceGroupDeployment -Name "FirstStage" -ResourceGroupName $resourceGroupName -TemplateFile main.bicep -Stage FirstStage
+New-AzResourceGroupDeployment -Name "NoPrivateResolver" -ResourceGroupName $resourceGroupName -TemplateFile main.bicep -UsePrivateResolver $false
+```
+run the following command :
+
+```powershell
+nslookup logcornerstprivdnsrev.file.core.windows.net
+
 ```
 
-# ###################################################
+returns the following
 
-nslookup logcornerstprivdnsrev.file.core.windows.net
+```powershell
 Server:  UnKnown
 Address:  168.63.129.16
 
@@ -126,6 +275,31 @@ Name:    logcornerstprivdnsrev.privatelink.file.core.windows.net
 Address:  10.201.0.5
 Aliases:  logcornerstprivdnsrev.file.core.windows.net
 
+```
+
+The query resolved the domain to the private IP address 10.201.0.5, indicating that Azure's default DNS service is functioning as expected, resolving the logcornerstprivdnsrev.file.core.windows.net domain to its corresponding private endpoint.
+
+**Test deployement using Azure Private DNS Resolver**
+
+```powershell
+Connect-AzAccount -Tenant 'xxxx-xxxx-xxxx-xxxx' -SubscriptionId 'yyyy-yyyy-yyyy-yyyy'
+
+$subscriptionId= (Get-AzContext).Subscription.id
+az account set --subscription $subscriptionId
+$resourceGroupName="rg-dns-private-resolver"
+New-AzResourceGroup -Name $resourceGroupName -Location "westeurope"
+New-AzResourceGroupDeployment -Name "UsePrivateResolver" -ResourceGroupName $resourceGroupName -TemplateFile main.bicep -UsePrivateResolver $true
+```
+
+Restart the vm and run the following command :
+
+```powershell
+nslookup logcornerstprivdnsrev.file.core.windows.net
+```
+
+returns the following
+
+```powershell
 Server:  UnKnown
 Address:  10.200.0.70
 
@@ -133,3 +307,10 @@ Non-authoritative answer:
 Name:    logcornerstprivdnsrev.privatelink.file.core.windows.net
 Address:  10.201.0.5
 Aliases:  logcornerstprivdnsrev.file.core.windows.net
+```
+
+The query resolved the domain to the private IP address 10.201.0.5, indicating that the custom DNS server at 10.200.0.70 is functioning as expected, resolving the logcornerstprivdnsrev.file.core.windows.net domain to its corresponding private endpoint.
+
+## 4. Github Repository
+
+<https://github.com/azurecorner/deployment-script-privately-over-a-private-endpoint-custum-dns-02>

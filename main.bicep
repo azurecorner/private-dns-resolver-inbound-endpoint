@@ -3,14 +3,14 @@ targetScope = 'resourceGroup'
 param location string = 'westeurope'
 param localAdminUsername string = 'logcorner'
 @secure()
-param localAdminPassword string = 'LongAndStrongP@ssw0rd1234'
+param localAdminPassword string   
 param storageAccountName string = 'logcornerstprivdnsrev'
 @allowed([
-  'FirstStage'
-  'EndStage'
+  true
+ false
 ])
-@description('Select either FirstStage or EndStage, based on whether or not you want the complete setup with Private Resolver or not. See readme for more information.')
-param Stage string
+@description('Use Private DNS Resolver for DNS resolution')
+param UsePrivateResolver bool = false
 
 module hubvnet './hubvnet.bicep' = {
   name: 'hubvnet'
@@ -23,7 +23,7 @@ module spokevnet './spokevnet.bicep' = {
   name: 'spokevnet'
   params: {
     location: location
-    Stage: Stage
+    UsePrivateResolver: UsePrivateResolver
   }
 }
 
@@ -67,7 +67,7 @@ module storage 'storage.bicep' = {
   }
 }
 
-module privateresolver 'privateresolver.bicep' = if (Stage == 'EndStage') {
+module privateresolver 'privateresolver.bicep' = if (UsePrivateResolver == true) {
   name: 'privateresolver'
   params: {
     location: location

@@ -1,6 +1,10 @@
- param location string
- @description('Select either FirstStage or EndStage, based on whether or not you want the complete setup with Private Resolver or not. See readme for more information.')
-param Stage string
+param location string
+param vnetAddressPrefixes string ='10.201.0.0/24'
+param defaultSubnetAddressPrefixes string ='10.201.0.0/26'
+param inboundPrivateIpAddress string = '10.200.0.70'
+
+@description('Use Private DNS Resolver for DNS resolution')
+param UsePrivateResolver bool = false
 
 resource spokevnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
   name: 'Spoke'
@@ -8,20 +12,20 @@ resource spokevnet 'Microsoft.Network/virtualNetworks@2023-09-01' = {
   properties: {
     addressSpace: {
       addressPrefixes: [
-        '10.201.0.0/24'
+        vnetAddressPrefixes
       ]
     }
     subnets: [
       {
         name: 'default'
         properties: {
-          addressPrefix: '10.201.0.0/26'
+          addressPrefix: defaultSubnetAddressPrefixes 
         }
       }
     ]
-    dhcpOptions: Stage == 'EndStage' ? {
+    dhcpOptions: UsePrivateResolver == true ? {
       dnsServers: [
-        '10.200.0.70'
+        inboundPrivateIpAddress
       ]
     } : null
   }
