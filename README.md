@@ -313,4 +313,4 @@ The query resolved the domain to the private IP address 10.201.0.5, indicating t
 
 ## 4. Github Repository
 
-<https://github.com/azurecorner/deployment-script-privately-over-a-private-endpoint-custum-dns-02>
+[<[https://github.com/azurecorner/deployment-script-privately-over-a-private-endpoint-custum-dns-02](https://github.com/azurecorner/private-dns-resolver-inbound-endpoint)>](https://github.com/azurecorner/private-dns-resolver-inbound-endpoint)
