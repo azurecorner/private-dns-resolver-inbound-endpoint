@@ -311,6 +311,6 @@ Aliases:  logcornerstprivdnsrev.file.core.windows.net
 
 The query resolved the domain to the private IP address 10.201.0.5, indicating that the custom DNS server at 10.200.0.70 is functioning as expected, resolving the logcornerstprivdnsrev.file.core.windows.net domain to its corresponding private endpoint.
 
-## 4. Github Repository
+### Github Repository
 
 [<[https://github.com/azurecorner/deployment-script-privately-over-a-private-endpoint-custum-dns-02](https://github.com/azurecorner/private-dns-resolver-inbound-endpoint)>](https://github.com/azurecorner/private-dns-resolver-inbound-endpoint)
